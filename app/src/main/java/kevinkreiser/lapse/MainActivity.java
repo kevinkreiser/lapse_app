@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         //start the service thread
         if(service_node != null)
             service_node.abort();
-        service_node = new ServiceNode(context);
+        service_node = new ServiceNode(context, File.separator + "sdcard" + File.separator + "lapse");
         try {
             JSONObject options = new JSONObject(state.getString("options"));
             service_node.setOptions(options);

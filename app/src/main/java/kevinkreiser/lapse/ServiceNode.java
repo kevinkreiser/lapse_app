@@ -8,6 +8,9 @@ import org.zeromq.ZBeacon;
 import org.zeromq.ZPoller;
 import org.zeromq.ZStar;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +21,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.text.format.Formatter;
 
+import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 
 import zmq.Poller;
@@ -31,11 +35,13 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
     private ZBeacon beacon;
     private byte[] beacon_msg;
     private JSONObject options;
+    private File image_dir;
 
-    public ServiceNode(Context c) {
+    public ServiceNode(Context c, String image_root) {
         context = c;
+        this.image_dir = new File(image_root);
         //set up the beacon message ahead of time
-        TelephonyManager tm = (TelephonyManager)c.getSystemService(Context.TELEPHONY_SERVICE);
+        TelephonyManager tm = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
         String id = tm.getDeviceId();
         beacon_msg = new byte[] { 'Z', 'R', 'E', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         int offset = id.length() > 16 ? (id.length() - 16)/2 : 0;
@@ -99,18 +105,35 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
             if (poller.poll(500) == 1) {
                 String message = service.recvStr();
                 try {
-                    JSONObject json = new JSONObject(message);
-                    String type = json.getString("type");
-                    /*switch (type) {
-                        case "get_options":
+                    switch(message.charAt(0)) {
+                        case 'I':
+                            service.send('I' + options.toString(), ZMQ.DONTWAIT);
                             break;
-                        case "set_options":
+                        case 'N':
+                            //TODO: make this smarter..
+                            File oldest = getOldestFile(image_dir);
+                            if(oldest == null)
+                                service.send("W" + 1, ZMQ.DONTWAIT);
+                            else
+                                service.send("N" + oldest.getPath(), ZMQ.DONTWAIT);
                             break;
-                        case "get_image":
+                        case 'C':
+                            try {
+                                File file =  new File(message.substring(1));
+                                byte[] bytes = new byte[(int)file.length()];
+                                BufferedInputStream buffer = new BufferedInputStream(new FileInputStream(file));
+                                buffer.read(bytes, 0, bytes.length);
+                                buffer.close();
+                                service.send(bytes, ZMQ.DONTWAIT);
+                            }
+                            catch(Exception e) { service.send("EFailed to get image", ZMQ.DONTWAIT); }
                             break;
-                    }*/
+                        default:
+                            service.send("EUnknown request", ZMQ.DONTWAIT);
+                            break;
+                    }
                 } catch (Exception e) {
-                    service.send("Malformed Request", ZMQ.DONTWAIT);
+                    service.send("EMalformed Request", ZMQ.DONTWAIT);
                     Log.e("Service Message", "Malformed request: " + message);
                 }
             }
@@ -142,6 +165,21 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
             return true;
         }
         return false;
+    }
+
+    private File getOldestFile(File root) {
+        File[] list = root.listFiles();
+        File oldest = null;
+        for (File f : list) {
+            if (f.isDirectory()) {
+                File child = getOldestFile(f);
+                if(child != null && (oldest == null || child.lastModified() < oldest.lastModified()))
+                    oldest = child;
+            }
+            else if(oldest == null || f.lastModified() < oldest.lastModified())
+                oldest = f;
+        }
+        return oldest;
     }
 }
 
