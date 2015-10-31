@@ -10,6 +10,7 @@ import org.zeromq.ZStar;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.util.Date;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -35,6 +36,7 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
     private ZBeacon beacon;
     private byte[] beacon_msg;
     private JSONObject options;
+    private Scheduler scheduler;
     private File image_dir;
 
     public ServiceNode(Context c, String image_root) {
@@ -66,10 +68,12 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
 
     public void setOptions(JSONObject json) {
         options = json;
+        scheduler = new Scheduler(json);
     }
 
     public void getNext() {
-
+        Date d = scheduler.getNext();
+        //TODO: make a timer
     }
 
     public void abort() {
@@ -104,9 +108,12 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
         while (!reset_connection && running && poller != null) {
             if (poller.poll(500) == 1) {
                 String message = service.recvStr();
+                Log.i("Service Message", message);
                 try {
                     switch(message.charAt(0)) {
                         case 'I':
+                            if(message.length() != 1)
+                                setOptions(new JSONObject(message.substring(1)));
                             service.send('I' + options.toString(), ZMQ.DONTWAIT);
                             break;
                         case 'N':
