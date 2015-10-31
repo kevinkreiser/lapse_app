@@ -1,22 +1,27 @@
 package kevinkreiser.lapse;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Date;
-import java.util.Timer;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 public class Scheduler {
     private int interval = - 1;
     private int start_time = 0;
     private int end_time = 24 * 60;
     private boolean[] weekdays = {false, false, false, false, false, false, false};
+    private JSONObject schedule;
+
+    //singleton
+    private static final Scheduler instance = new Scheduler();
+    protected Scheduler() { }
+    public static Scheduler getInstance() { return instance; }
 
     //keep the schedule info only if its complete
-    public Scheduler(JSONObject json) {
+    public synchronized void reset(JSONObject json) {
         try {
-            JSONObject schedule = json.optJSONObject("schedule");
+            schedule = json.optJSONObject("schedule");
             interval = schedule.getInt("interval");
             if(interval < 1 || interval > 300)
                 throw new Exception();
@@ -47,15 +52,32 @@ public class Scheduler {
             start_time = 0;
             end_time = 24 * 60;
             weekdays = new boolean[] {false, false, false, false, false, false, false};
+            schedule = null;
         }
     }
 
-    public Date getNext() {
-        if(interval == -1)
-            return null;
-        Date date = new Date();
-        date.setTime(date.getTime() + interval * 1000);
-        //TODO: check if this date isnt in range and go to next that is
-        return date;
+    public synchronized int getInterval() {
+        //how often
+        if(interval < 1)
+            return -1;
+
+        //on what day
+        Calendar calendar = new GregorianCalendar();
+        int day = calendar.get(Calendar.DAY_OF_WEEK) - 2;
+        if(day == -1)
+            day = 6;
+        if(!weekdays[day])
+            return -1;
+
+        //between what times
+        int time = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE) + interval;
+        if(start_time > time || time > end_time)
+            return -1;
+
+        return interval;
+    }
+
+    public synchronized JSONObject getSchedule() {
+        return schedule;
     }
 }

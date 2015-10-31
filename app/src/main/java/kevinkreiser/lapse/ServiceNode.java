@@ -10,7 +10,7 @@ import org.zeromq.ZStar;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.util.Date;
+import java.io.FileInputStream;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -22,11 +22,6 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.text.format.Formatter;
 
-import java.io.FileInputStream;
-import java.nio.charset.StandardCharsets;
-
-import zmq.Poller;
-
 public class ServiceNode extends BroadcastReceiver implements Runnable  {
     private Context context;
     private volatile boolean running = true;
@@ -35,13 +30,11 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
     private Socket service;
     private ZBeacon beacon;
     private byte[] beacon_msg;
-    private JSONObject options;
-    private Scheduler scheduler;
     private File image_dir;
 
     public ServiceNode(Context c, String image_root) {
         context = c;
-        this.image_dir = new File(image_root);
+        image_dir = new File(image_root);
         //set up the beacon message ahead of time
         TelephonyManager tm = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
         String id = tm.getDeviceId();
@@ -60,20 +53,6 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
                 reset_connection = true;
             }
         }
-    }
-
-    public JSONObject getOptions() {
-        return options;
-    }
-
-    public void setOptions(JSONObject json) {
-        options = json;
-        scheduler = new Scheduler(json);
-    }
-
-    public void getNext() {
-        Date d = scheduler.getNext();
-        //TODO: make a timer
     }
 
     public void abort() {
@@ -113,8 +92,8 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
                     switch(message.charAt(0)) {
                         case 'I':
                             if(message.length() != 1)
-                                setOptions(new JSONObject(message.substring(1)));
-                            service.send('I' + options.toString(), ZMQ.DONTWAIT);
+                                Scheduler.getInstance().reset(new JSONObject(message.substring(1)));
+                            service.send('I' + Scheduler.getInstance().getSchedule().toString(), ZMQ.DONTWAIT);
                             break;
                         case 'N':
                             //TODO: make this smarter..
@@ -176,6 +155,8 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
 
     private File getOldestFile(File root) {
         File[] list = root.listFiles();
+        if(list == null)
+            return  null;
         File oldest = null;
         for (File f : list) {
             if (f.isDirectory()) {
