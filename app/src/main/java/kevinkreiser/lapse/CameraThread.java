@@ -20,38 +20,32 @@ public class CameraThread implements Runnable {
     private CountDownLatch latch;
 
     public CameraThread(Context context, LinearLayout layout, final String picture_dir) {
-        try {
-            //open a landscape camera
-            camera = Camera.open();
-            camera.setDisplayOrientation(0);
+        //try the camera
+        tryCamera();
 
-            //setup the preview
-            preview = new CameraPreview(context);
-            layout.setVisibility(View.VISIBLE);
-            layout.addView(preview);
+        //setup the preview
+        preview = new CameraPreview(context);
+        layout.setVisibility(View.VISIBLE);
+        layout.addView(preview);
 
-            //what to do with the jpeg bytes when a picture is taken
-            image_callback = new Camera.PictureCallback() {
-                @Override
-                public void onPictureTaken(byte[] data, Camera camera) {
-                    //save the image
-                    try {
-                        FileOutputStream fos = new FileOutputStream(out_file(picture_dir));
-                        fos.write(data);
-                        fos.close();
-                    } catch (Exception e) {
-                        Log.e("Write Picture", "Couldn't save picture: " + e.getMessage());
-                    }
-                    //kill the preview
-                    preview.stop();
-                    //signal we are done
-                    latch.countDown();
+        //what to do with the jpeg bytes when a picture is taken
+        image_callback = new Camera.PictureCallback() {
+            @Override
+            public void onPictureTaken(byte[] data, Camera camera) {
+                //save the image
+                try {
+                    FileOutputStream fos = new FileOutputStream(out_file(picture_dir));
+                    fos.write(data);
+                    fos.close();
+                } catch (Exception e) {
+                    Log.e("Write Picture", "Couldn't save picture: " + e.getMessage());
                 }
-            };
-        }
-        catch(Exception e) {
-            Log.e("Camera Troubles", e.getMessage());
-        }
+                //kill the preview
+                preview.stop();
+                //signal we are done
+                latch.countDown();
+            }
+        };
     }
 
     public void abort() {
@@ -69,10 +63,12 @@ public class CameraThread implements Runnable {
             try { Thread.sleep(interval * 1000); } catch (Exception e) { break; }
 
             //ask for a picture and wait until image is saved
-            latch = new CountDownLatch(1);
-            preview.start(camera);
-            camera.takePicture(null, null, image_callback);
-            try { latch.await(); } catch(Exception e) { break; }
+            if(tryCamera()) {
+                latch = new CountDownLatch(1);
+                preview.start(camera);
+                camera.takePicture(null, null, image_callback);
+                try { latch.await(); } catch (Exception e) { break; }
+            }
         }
         camera.release();
     }
@@ -85,5 +81,21 @@ public class CameraThread implements Runnable {
             return null;
         //make a reasonable file name
         return new File(dir, new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(new Date()) + ".JPG");
+    }
+
+    private boolean tryCamera() {
+        try {
+            //open a landscape camera
+            if(camera == null) {
+                camera = Camera.open();
+                camera.setDisplayOrientation(0);
+            }
+        }
+        catch(Exception e) {
+            camera = null;
+            Log.e("Camera Troubles", e.getMessage());
+            return false;
+        }
+        return true;
     }
 }

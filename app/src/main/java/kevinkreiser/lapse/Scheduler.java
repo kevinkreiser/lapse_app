@@ -22,7 +22,7 @@ public class Scheduler {
     public synchronized void reset(JSONObject json) {
         try {
             schedule = json.optJSONObject("schedule");
-            if (json.optBoolean("disabled", false)) {
+            if (!json.optBoolean("enabled", true)) {
                 interval = -1;
                 return;
             }
