@@ -85,7 +85,7 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
 
         //answer requests
         while (!reset_connection && running && poller != null) {
-            if (poller.poll(500) == 1) {
+            if (poller.poll(100) == 1) {
                 String message = service.recvStr();
                 Log.i("Service Message", message);
                 try {
@@ -100,7 +100,7 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
                         case 'N':
                             File oldest = getOldestFile(image_dir);
                             if(oldest == null)
-                                service.send("W" + 1, ZMQ.DONTWAIT);
+                                service.send("W" + Scheduler.getInstance().getSchedule().toString(), ZMQ.DONTWAIT);
                             else
                                 service.send("N" + oldest.getPath(), ZMQ.DONTWAIT);
                             break;
@@ -125,7 +125,6 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
                     Log.e("Service Message", "Malformed request: " + message);
                 }
             }
-            try { Thread.sleep(500); } catch (Exception e) { Log.e("Listener Loop", "Insomniac"); }
         }
 
         //cleanup

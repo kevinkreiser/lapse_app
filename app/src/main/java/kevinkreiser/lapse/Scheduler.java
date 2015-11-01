@@ -7,6 +7,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 public class Scheduler {
+    private boolean enabled = false;
     private int interval = - 1;
     private int start_time = 0;
     private int end_time = 24 * 60;
@@ -22,10 +23,7 @@ public class Scheduler {
     public synchronized void reset(JSONObject json) {
         try {
             schedule = json.optJSONObject("schedule");
-            if (!json.optBoolean("enabled", true)) {
-                interval = -1;
-                return;
-            }
+            enabled = schedule.getBoolean("enabled");
 
             interval = schedule.getInt("interval");
             if(interval < 1 || interval > 300)
@@ -53,6 +51,7 @@ public class Scheduler {
                 throw new Exception();
         }
         catch(Exception e) {
+            enabled = false;
             interval = -1;
             start_time = 0;
             end_time = 24 * 60;
@@ -62,6 +61,9 @@ public class Scheduler {
     }
 
     public synchronized int getInterval() {
+        if(!enabled)
+            return -1;
+
         //how often
         if(interval < 1)
             return -1;

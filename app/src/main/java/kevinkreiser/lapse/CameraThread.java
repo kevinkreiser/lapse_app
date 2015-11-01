@@ -74,9 +74,11 @@ public class CameraThread implements Runnable {
     }
 
     private static File out_file(String root_dir) {
+        //TODO: find and remove old empty directories
         //make a place to put these pictures
         Date now = new Date();
-        File dir = new File(root_dir, new SimpleDateFormat("yyyy_MM_dd").format(now));
+        File dir = new File(root_dir, new SimpleDateFormat("yyyy_MM").format(now) + File.separator +
+            new SimpleDateFormat("dd_HH").format(now));
         if(!dir.exists() && !dir.mkdirs())
             return null;
         //make a reasonable file name
