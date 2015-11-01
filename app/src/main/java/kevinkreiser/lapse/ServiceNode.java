@@ -95,8 +95,9 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
                                 Scheduler.getInstance().reset(new JSONObject(message.substring(1)));
                             service.send('I' + Scheduler.getInstance().getSchedule().toString(), ZMQ.DONTWAIT);
                             break;
+                        case 'D':
+                            removeFile(message.substring(1));
                         case 'N':
-                            //TODO: make this smarter..
                             File oldest = getOldestFile(image_dir);
                             if(oldest == null)
                                 service.send("W" + 1, ZMQ.DONTWAIT);
@@ -106,9 +107,10 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
                         case 'C':
                             try {
                                 File file =  new File(message.substring(1));
-                                byte[] bytes = new byte[(int)file.length()];
+                                byte[] bytes = new byte[(int)file.length() + 1];
+                                bytes[0] = 'C';
                                 BufferedInputStream buffer = new BufferedInputStream(new FileInputStream(file));
-                                buffer.read(bytes, 0, bytes.length);
+                                buffer.read(bytes, 1, (int)file.length());
                                 buffer.close();
                                 service.send(bytes, ZMQ.DONTWAIT);
                             }
@@ -168,6 +170,11 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
                 oldest = f;
         }
         return oldest;
+    }
+
+    private void removeFile(String name) {
+        File file = new File(name);
+        file.delete();
     }
 }
 

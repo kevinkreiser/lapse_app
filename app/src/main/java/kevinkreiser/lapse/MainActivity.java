@@ -71,4 +71,10 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         camera.abort();
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        service_node.abort();
+    }
 }

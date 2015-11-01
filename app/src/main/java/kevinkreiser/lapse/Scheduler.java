@@ -11,7 +11,7 @@ public class Scheduler {
     private int start_time = 0;
     private int end_time = 24 * 60;
     private boolean[] weekdays = {false, false, false, false, false, false, false};
-    private JSONObject schedule;
+    private JSONObject schedule = null;
 
     //singleton
     private static final Scheduler instance = new Scheduler();
@@ -22,6 +22,11 @@ public class Scheduler {
     public synchronized void reset(JSONObject json) {
         try {
             schedule = json.optJSONObject("schedule");
+            if (json.optBoolean("disabled", false)) {
+                interval = -1;
+                return;
+            }
+
             interval = schedule.getInt("interval");
             if(interval < 1 || interval > 300)
                 throw new Exception();
@@ -48,7 +53,7 @@ public class Scheduler {
                 throw new Exception();
         }
         catch(Exception e) {
-            interval = - 1;
+            interval = -1;
             start_time = 0;
             end_time = 24 * 60;
             weekdays = new boolean[] {false, false, false, false, false, false, false};
