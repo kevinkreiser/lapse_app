@@ -70,7 +70,8 @@ public class CameraThread implements Runnable {
                 try { latch.await(); } catch (Exception e) { break; }
             }
         }
-        camera.release();
+        if(camera != null)
+            camera.release();
     }
 
     private static File out_file(String root_dir) {
