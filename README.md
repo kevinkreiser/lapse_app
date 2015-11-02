@@ -7,5 +7,5 @@ Here are a few images of the hacked together mount I made for an off the shelf G
 ![Camera Hole](docs/sm_DSC06585.JPG)
 ![Usable Screen](docs/sm_DSC06586.JPG)
 ![Bungee Mount](docs/sm_DSC06587.JPG)
-![Closeup Mount](docs/sm_DSC065858.JPG)
+![Closeup Mount](docs/sm_DSC06588.JPG)
 ![Cable Management](docs/sm_DSC06589.JPG)
