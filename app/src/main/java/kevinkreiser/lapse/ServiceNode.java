@@ -18,6 +18,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.text.format.Formatter;
@@ -38,6 +39,8 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
         //set up the beacon message ahead of time
         TelephonyManager tm = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
         String id = tm.getDeviceId();
+        if(id == null)
+            id = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
         beacon_msg = new byte[] { 'Z', 'R', 'E', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         int offset = id.length() > 16 ? (id.length() - 16)/2 : 0;
         for(int i = offset; i < 16 && i < id.length(); i++)
