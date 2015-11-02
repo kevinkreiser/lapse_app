@@ -20,7 +20,7 @@ public class Scheduler {
     private int end_time = 24 * 60;
     private boolean[] weekdays = {false, false, false, false, false, false, false};
     private JSONObject schedule = null;
-    private final String file = File.separator + "sdcard" + File.separator + "lapse" + File.separator + "schedule.json";
+    private final File file = new File(File.separator + "sdcard" + File.separator + "lapse", "schedule.json");
 
     //singleton
     private static final Scheduler instance = new Scheduler();
@@ -81,7 +81,9 @@ public class Scheduler {
         }
 
         try {
-            new File(file).delete();
+            if(!file.getParentFile().exists() && !file.getParentFile().mkdirs())
+                Log.e("File", "Couldn't make storage location");
+            file.delete();
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
             writer.write(new JSONObject().put("schedule", schedule).toString());
             writer.close();
