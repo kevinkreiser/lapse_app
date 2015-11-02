@@ -1,8 +1,15 @@
 package kevinkreiser.lapse;
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -13,11 +20,23 @@ public class Scheduler {
     private int end_time = 24 * 60;
     private boolean[] weekdays = {false, false, false, false, false, false, false};
     private JSONObject schedule = null;
+    private final String file = File.separator + "sdcard" + File.separator + "lapse" + File.separator + "schedule.json";
 
     //singleton
     private static final Scheduler instance = new Scheduler();
-    protected Scheduler() { }
-    public static Scheduler getInstance() { return instance; }
+    public static Scheduler getInstance() {
+        return instance;
+    }
+    protected Scheduler() {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file));
+            reset(new JSONObject(reader.readLine()));
+            reader.close();
+        }
+        catch (Exception e) {
+            reset(new JSONObject());
+        }
+    }
 
     //keep the schedule info only if its complete
     public synchronized void reset(JSONObject json) {
@@ -54,9 +73,21 @@ public class Scheduler {
             enabled = false;
             interval = -1;
             start_time = 0;
-            end_time = 24 * 60;
+            end_time = 24 * 60 - 1;
             weekdays = new boolean[] {false, false, false, false, false, false, false};
-            schedule = null;
+            try {
+                schedule = new JSONObject("{\"enabled\":false,\"interval\":-1,\"weekdays\":[false,false,false,false,false,false,false],\"daily_start_time\":\"0:00\",\"daily_end_time\":\"23:59\"}");
+            } catch(Exception f) { }
+        }
+
+        try {
+            new File(file).delete();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            writer.write(new JSONObject().put("schedule", schedule).toString());
+            writer.close();
+        }
+        catch(Throwable t) {
+            Log.e("Schedule", t.getMessage());
         }
     }
 
