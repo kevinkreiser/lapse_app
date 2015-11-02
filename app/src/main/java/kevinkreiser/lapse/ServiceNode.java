@@ -65,7 +65,7 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
             if(resetConnection())
                 listen();
             //maybe the connection will come back in a little
-            try { Thread.sleep(120000); } catch(Exception e) { Log.e("Service Thread", "Insomniac"); }
+            try { Thread.sleep(60000); } catch(Exception e) { Log.e("Service Thread", "Insomniac"); }
         }
     }
 
@@ -135,7 +135,6 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
     }
 
     private boolean resetConnection() {
-        reset_connection = false;
         ConnectivityManager connectivityManager = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         if (networkInfo.isConnected()) {
@@ -149,8 +148,17 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
             WifiManager wifiManager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
             String broadcast_ip = Formatter.formatIpAddress(wifiManager.getDhcpInfo().gateway).replaceFirst("[0-9]+$", "255");
             beacon = new ZBeacon(broadcast_ip, 5670, beacon_msg, true);
+            Thread.UncaughtExceptionHandler reset = new Thread.UncaughtExceptionHandler() {
+                public void uncaughtException(Thread t, Throwable e) {
+                    Log.e("Connection", "Lost");
+                    reset_connection = true;
+                }
+            };
+            beacon.setUncaughtExceptionHandlers(reset, reset);
+            reset_connection = false;
             return true;
         }
+        reset_connection = true;
         return false;
     }
 
