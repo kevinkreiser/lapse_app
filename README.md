@@ -2,6 +2,9 @@ Lapse is a distributed remote controlled time lapse camera system. It consists o
 
 All of this stuff is still in very early developement so don't get excited if it doesn't work yet ;o)
 
+Hack Mount
+----------
+
 Here are a few images of the hacked together mount I made for an off the shelf Galaxy Tab S 8.4in:
 
 ![Camera Hole](docs/sm_DSC06585.JPG)
