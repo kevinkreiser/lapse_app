@@ -16,17 +16,25 @@ public class CameraThread implements Runnable {
     private volatile boolean running = true;
     private Camera camera;
     private CameraPreview preview;
+    private Camera.AutoFocusCallback focus_callback;
     private Camera.PictureCallback image_callback;
     private CountDownLatch latch;
+    private boolean refocus;
 
     public CameraThread(Context context, LinearLayout layout, final String picture_dir) {
-        //try the camera
-        tryCamera();
-
         //setup the preview
         preview = new CameraPreview(context);
         layout.setVisibility(View.VISIBLE);
         layout.addView(preview);
+
+        //try to get focus for the camera
+        focus_callback = new Camera.AutoFocusCallback() {
+            @Override
+            public void onAutoFocus(boolean success, Camera camera) {
+                refocus = !success;
+                latch.countDown();
+            }
+        };
 
         //what to do with the jpeg bytes when a picture is taken
         image_callback = new Camera.PictureCallback() {
@@ -40,8 +48,6 @@ public class CameraThread implements Runnable {
                 } catch (Exception e) {
                     Log.e("Write Picture", "Couldn't save picture: " + e.getMessage());
                 }
-                //kill the preview
-                preview.stop();
                 //signal we are done
                 latch.countDown();
             }
@@ -57,6 +63,7 @@ public class CameraThread implements Runnable {
             //wait for a valid interval to sleep
             int interval = Scheduler.getInstance().getInterval();
             while(interval < 1) {
+                refocus = true;
                 try { Thread.sleep(1000); } catch (Exception e) { break; }
                 interval = Scheduler.getInstance().getInterval();
             }
@@ -64,14 +71,17 @@ public class CameraThread implements Runnable {
 
             //ask for a picture and wait until image is saved
             if(tryCamera()) {
-                latch = new CountDownLatch(1);
                 preview.start(camera);
+                latch = new CountDownLatch(1);
                 camera.takePicture(null, null, image_callback);
                 try { latch.await(); } catch (Exception e) { break; }
+                preview.stop();
             }
         }
-        if(camera != null)
+        if(camera != null) {
             camera.release();
+            camera = null;
+        }
     }
 
     private static File out_file(String root_dir) {
@@ -90,15 +100,24 @@ public class CameraThread implements Runnable {
         try {
             //open a landscape camera
             if(camera == null) {
+                refocus = true;
                 camera = Camera.open();
                 camera.setDisplayOrientation(0);
+            }
+            //make sure to focus
+            if(camera != null && refocus) {
+                preview.start(camera);
+                latch = new CountDownLatch(1);
+                camera.autoFocus(focus_callback);
+                try { latch.await(); } catch (Exception e) { }
+                preview.stop();
+                Log.i("Camera", "Refocused");
             }
         }
         catch(Exception e) {
             camera = null;
             Log.e("Camera Troubles", e.getMessage());
-            return false;
         }
-        return true;
+        return camera != null;
     }
 }

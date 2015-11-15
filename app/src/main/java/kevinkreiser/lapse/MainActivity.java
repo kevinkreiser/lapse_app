@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        camera.abort();
         service_node.abort();
     }
 }
