@@ -18,7 +18,6 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
-import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.text.format.Formatter;
@@ -40,7 +39,7 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
         TelephonyManager tm = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
         String id = tm.getDeviceId();
         if(id == null)
-            id = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+            id = android.provider.Settings.Secure.getString(context.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
         beacon_msg = new byte[] { 'Z', 'R', 'E', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         int offset = id.length() > 16 ? (id.length() - 16)/2 : 0;
         for(int i = offset; i < 16 && i < id.length(); i++)
@@ -95,15 +94,15 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
                     switch(message.charAt(0)) {
                         case 'I':
                             if(message.length() != 1)
-                                Scheduler.getInstance().reset(new JSONObject(message.substring(1)));
-                            service.send('I' + Scheduler.getInstance().getSchedule().toString(), ZMQ.DONTWAIT);
+                                Settings.getInstance().reset(new JSONObject(message.substring(1)));
+                            service.send('I' + Settings.getInstance().getSchedule().toString(), ZMQ.DONTWAIT);
                             break;
                         case 'D':
                             removeFile(message.substring(1));
                         case 'N':
                             File oldest = getOldestFile(image_dir);
                             if(oldest == null)
-                                service.send("W" + Scheduler.getInstance().getSchedule().toString(), ZMQ.DONTWAIT);
+                                service.send("W" + Settings.getInstance().getSchedule().toString(), ZMQ.DONTWAIT);
                             else
                                 service.send("N" + oldest.getPath(), ZMQ.DONTWAIT);
                             break;

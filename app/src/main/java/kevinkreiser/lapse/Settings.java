@@ -13,21 +13,21 @@ import java.io.FileWriter;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-public class Scheduler {
+public class Settings {
     private boolean enabled = false;
     private int interval = - 1;
     private int start_time = 0;
     private int end_time = 24 * 60;
     private boolean[] weekdays = {false, false, false, false, false, false, false};
     private JSONObject schedule = null;
-    private final File file = new File(File.separator + "sdcard" + File.separator + "lapse", "schedule.json");
+    private final File file = new File(File.separator + "sdcard" + File.separator + "lapse", "settings.json");
 
     //singleton
-    private static final Scheduler instance = new Scheduler();
-    public static Scheduler getInstance() {
+    private static final Settings instance = new Settings();
+    public static Settings getInstance() {
         return instance;
     }
-    protected Scheduler() {
+    protected Settings() {
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             reset(new JSONObject(reader.readLine()));

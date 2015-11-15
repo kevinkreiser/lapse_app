@@ -61,11 +61,11 @@ public class CameraThread implements Runnable {
     public void run() {
         while(running) {
             //wait for a valid interval to sleep
-            int interval = Scheduler.getInstance().getInterval();
+            int interval = Settings.getInstance().getInterval();
             while(interval < 1) {
                 refocus = true;
                 try { Thread.sleep(1000); } catch (Exception e) { break; }
-                interval = Scheduler.getInstance().getInterval();
+                interval = Settings.getInstance().getInterval();
             }
             try { Thread.sleep(interval * 1000); } catch (Exception e) { break; }
 
