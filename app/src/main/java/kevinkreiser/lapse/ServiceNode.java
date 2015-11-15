@@ -95,14 +95,14 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
                         case 'I':
                             if(message.length() != 1)
                                 Settings.getInstance().reset(new JSONObject(message.substring(1)));
-                            service.send('I' + Settings.getInstance().getSchedule().toString(), ZMQ.DONTWAIT);
+                            service.send('I' + Settings.getInstance().toString(), ZMQ.DONTWAIT);
                             break;
                         case 'D':
                             removeFile(message.substring(1));
                         case 'N':
                             File oldest = getOldestFile(image_dir);
                             if(oldest == null)
-                                service.send("W" + Settings.getInstance().getSchedule().toString(), ZMQ.DONTWAIT);
+                                service.send("W" + Settings.getInstance().toString(), ZMQ.DONTWAIT);
                             else
                                 service.send("N" + oldest.getPath(), ZMQ.DONTWAIT);
                             break;
@@ -184,6 +184,7 @@ public class ServiceNode extends BroadcastReceiver implements Runnable  {
     private void removeFile(String name) {
         File file = new File(name);
         file.delete();
+        //TODO: delete empty directories that are older than this one
     }
 }
 
